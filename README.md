@@ -113,7 +113,8 @@ tr-api profiles add        # imports cookies from Chrome
 
 # 4. Use it
 tr-api portfolio
-tr-api transactions --since 7d
+tr-api transactions --since 2026-01-01
+tr-api activity-log --since 2026-01-01
 ```
 
 ### Programmatic-login mode (headless server)
@@ -205,6 +206,7 @@ tr-api profiles remove <phone>    # delete a profile entirely
 | `tr_api.account` | `summary(client)`, `ping(client)`. Wrappers around `/api/v2/auth/account`. |
 | `tr_api.portfolio` | `snapshot(client)` (compact) and `snapshot_full(client)` (positions enriched with names + live prices in one WS connection). |
 | `tr_api.transactions` | Paginated timeline fetches: `fetch_all`, `fetch_since(cutoff)`, `fetch_until_id(known_ids)`. Topic: `timelineTransactions`. |
+| `tr_api.activity_log` | Same fetch helpers for `timelineActivityLog` (trades, dividends, savings-plan executions, corporate actions). CLI: `tr-api activity-log`. |
 | `tr_api.exceptions` | Hierarchy: `TrApiError` → `CookieError` / `ProfileError` / `AuthError` / `ApiError`. Specific: `MissingSessionCookies`, `SessionExpired`, `RateLimited`, `InvalidCredentials`. |
 | `tr_api.cli` | `tr-api …` command-line interface. See [docs/cli-contract.md](docs/cli-contract.md). |
 

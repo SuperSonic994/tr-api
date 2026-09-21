@@ -156,6 +156,16 @@ WebSocket portfolio fetch. Payload is the merged portfolio snapshot.
 
 Timeline transactions, optionally bounded. Payload is a list.
 
+### `tr-api activity-log [--since=YYYY-MM-DD] [--since-id=…] [--max-pages=N] [--phone=…]`
+
+Timeline activity log (`timelineActivityLog` WebSocket topic): instrument
+activity such as trades, dividends, savings-plan executions, and corporate
+actions. Options mirror `transactions`. Payload:
+
+```json
+{"count": 42, "items": [ … ]}
+```
+
 ### `tr-api timeline-detail <event_id> [<event_id> ...] [--with-documents] [--phone=…]`
 
 Fetch the `timelineDetailV2` page for one or more event IDs. With a

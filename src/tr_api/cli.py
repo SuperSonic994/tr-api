@@ -27,7 +27,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-from . import account, auth, cookies, documents, portfolio, profiles, savings_plans, timeline_detail, transactions
+from . import (
+    account,
+    activity_log,
+    auth,
+    cookies,
+    documents,
+    portfolio,
+    profiles,
+    savings_plans,
+    timeline_detail,
+    transactions,
+)
 from .auth import InvalidCredentials, LoginError, RateLimited
 from .client import TrClient
 from .exceptions import (
@@ -411,6 +422,21 @@ def cmd_transactions(args: argparse.Namespace) -> Any:
     return {"count": len(items), "items": items}
 
 
+def cmd_activity_log(args: argparse.Namespace) -> Any:
+    p = _resolve_profile(args.phone)
+    with TrClient(p) as c:
+        if args.since:
+            cutoff = _parse_date(args.since)
+            items = activity_log.fetch_since(c, cutoff, max_pages=args.max_pages)
+        elif args.since_id:
+            items = activity_log.fetch_until_id(
+                c, args.since_id, max_pages=args.max_pages
+            )
+        else:
+            items = activity_log.fetch_all(c, max_pages=args.max_pages)
+    return {"count": len(items), "items": items}
+
+
 # ----- timeline-detail ---------------------------------------------------
 def cmd_timeline_detail(args: argparse.Namespace) -> Any:
     p = _resolve_profile(args.phone)
@@ -669,6 +695,19 @@ def _build_parser() -> argparse.ArgumentParser:
                     help="Stop when this ID appears (repeatable)")
     sp.add_argument("--max-pages", type=int, default=transactions.MAX_PAGES_DEFAULT)
     sp.set_defaults(func=cmd_transactions)
+
+    # activity-log
+    sp = sub.add_parser(
+        "activity-log",
+        help="Fetch timeline activity log (trades, dividends, savings plans, corporate actions)",
+    )
+    sp.add_argument("--phone", default=None)
+    sp.add_argument("--since", default=None,
+                    help="YYYY-MM-DD or full ISO-8601 cutoff (exclusive)")
+    sp.add_argument("--since-id", action="append", default=None,
+                    help="Stop when this ID appears (repeatable)")
+    sp.add_argument("--max-pages", type=int, default=activity_log.MAX_PAGES_DEFAULT)
+    sp.set_defaults(func=cmd_activity_log)
 
     # docs (group)
     dp = sub.add_parser(
