@@ -38,7 +38,7 @@ async def _paginate_topic_on_ws(
     cursor: str | None = None
     pages = 0
     cutoff = (
-        since.astimezone(timezone.utc)
+        since.replace(tzinfo=timezone.utc)
         if (since and since.tzinfo is None)
         else since
     )

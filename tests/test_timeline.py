@@ -81,6 +81,23 @@ class FakeTrWebSocketWithSince(FakeTrWebSocket):
         raise AssertionError(f"unexpected topic {topic!r}")
 
 
+class FakeTrWebSocketNaiveSinceCutoff(FakeTrWebSocket):
+    async def fetch_one(self, payload: dict[str, Any], timeout: float | None = None) -> dict[str, Any]:
+        self.fetch_calls.append(dict(payload))
+        topic = payload["type"]
+        if topic == transactions.TOPIC:
+            return {
+                "items": [
+                    {"id": "tx-after-cutoff", "timestamp": "2026-01-01T12:30:00.000Z"},
+                    {"id": "tx-before-cutoff", "timestamp": "2026-01-01T11:30:00.000Z"},
+                ],
+                "cursors": {"after": None},
+            }
+        if topic == activity_log.TOPIC:
+            return {"items": [], "cursors": {"after": None}}
+        raise AssertionError(f"unexpected topic {topic!r}")
+
+
 class FakeClient:
     class session:
         cookies = object()
@@ -184,6 +201,20 @@ def test_since_applies_to_both_streams(monkeypatch: pytest.MonkeyPatch) -> None:
         {"id": "al-new", "timestamp": "2026-02-01T00:00:00.000Z"},
     ]
     assert result["combined_count"] == 2
+
+
+def test_naive_since_cutoff_is_utc_not_local(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Naive since datetimes must mean UTC, matching transactions/activity_log."""
+    monkeypatch.setattr("tr_api.timeline.TrWebSocket", FakeTrWebSocketNaiveSinceCutoff)
+
+    naive_cutoff = datetime(2026, 1, 1, 12, 0, 0)
+    result = timeline.fetch_combined(FakeClient(), since=naive_cutoff, max_pages=1)
+
+    assert naive_cutoff.tzinfo is None
+    assert result["transactions"]["items"] == [
+        {"id": "tx-after-cutoff", "timestamp": "2026-01-01T12:30:00.000Z"},
+    ]
+    assert result["transactions"]["count"] == 1
 
 
 def test_cli_json_envelope(
