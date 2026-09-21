@@ -36,6 +36,7 @@ from . import (
     portfolio,
     profiles,
     savings_plans,
+    timeline,
     timeline_detail,
     transactions,
 )
@@ -437,6 +438,13 @@ def cmd_activity_log(args: argparse.Namespace) -> Any:
     return {"count": len(items), "items": items}
 
 
+def cmd_timeline(args: argparse.Namespace) -> Any:
+    p = _resolve_profile(args.phone)
+    with TrClient(p) as c:
+        since = _parse_date(args.since) if args.since else None
+        return timeline.fetch_combined(c, since=since, max_pages=args.max_pages)
+
+
 # ----- timeline-detail ---------------------------------------------------
 def cmd_timeline_detail(args: argparse.Namespace) -> Any:
     p = _resolve_profile(args.phone)
@@ -696,10 +704,21 @@ def _build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--max-pages", type=int, default=transactions.MAX_PAGES_DEFAULT)
     sp.set_defaults(func=cmd_transactions)
 
+    # timeline (combined)
+    sp = sub.add_parser(
+        "timeline",
+        help="Fetch both timeline topics on one WebSocket (full history read)",
+    )
+    sp.add_argument("--phone", default=None)
+    sp.add_argument("--since", default=None,
+                    help="YYYY-MM-DD or full ISO-8601 cutoff (exclusive)")
+    sp.add_argument("--max-pages", type=int, default=timeline.MAX_PAGES_DEFAULT)
+    sp.set_defaults(func=cmd_timeline)
+
     # activity-log
     sp = sub.add_parser(
         "activity-log",
-        help="Fetch timeline activity log (trades, dividends, savings plans, corporate actions)",
+        help="Low-level read of timelineActivityLog only (use `timeline` for full history)",
     )
     sp.add_argument("--phone", default=None)
     sp.add_argument("--since", default=None,

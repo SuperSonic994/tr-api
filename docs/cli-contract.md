@@ -156,11 +156,31 @@ WebSocket portfolio fetch. Payload is the merged portfolio snapshot.
 
 Timeline transactions, optionally bounded. Payload is a list.
 
+### `tr-api timeline [--since=YYYY-MM-DD] [--max-pages=N] [--phone=…]`
+
+Combined timeline read: paginates `timelineTransactions` and then
+`timelineActivityLog` on **one** WebSocket connection. Use this for a
+full account timeline — TR may place economic events on either topic and
+the split can change over time. Payload:
+
+```json
+{
+  "transactions": {"count": 123, "items": [ … ]},
+  "activity_log": {"count": 45, "items": [ … ]},
+  "combined_count": 168
+}
+```
+
+No classification, deduplication, or event rewriting.
+
 ### `tr-api activity-log [--since=YYYY-MM-DD] [--since-id=…] [--max-pages=N] [--phone=…]`
 
-Timeline activity log (`timelineActivityLog` WebSocket topic): instrument
-activity such as trades, dividends, savings-plan executions, and corporate
-actions. Options mirror `transactions`. Payload:
+Low-level read of the `timelineActivityLog` topic only. Useful for
+debugging or incremental sync against that feed alone; **not** a
+substitute for `tr-api timeline`. Event distribution between TR topics
+can change — order lifecycle, documents, and corporate-action metadata
+often appear here while trades/dividends may live on `timelineTransactions`.
+Options mirror `transactions`. Payload:
 
 ```json
 {"count": 42, "items": [ … ]}
